@@ -676,14 +676,24 @@ if st.button("Generate Invoice") and st.session_state["products"]:
     # Log invoice data
     log_invoice_data(order_info, st.session_state["products"], pdf_bytes)
 
-    # Download
-    st.download_button("Download Invoice PDF", data=pdf_bytes,
-                       file_name=f"invoice_{order_info['invoice_number']}.pdf",
-                       mime="application/pdf")
-
-    # Preview PDF inline with larger size
-    base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
+    # Browser-friendly PDF display
+    st.markdown("### 📄 Invoice Preview")
+    
+    # Download button for easy access
+    st.download_button(
+        label="📥 Download PDF Invoice",
+        data=pdf_bytes,
+        file_name=f"invoice_{order_info.get('invoice_number', 'unknown')}.pdf",
+        mime="application/pdf",
+        help="Click to download and view the PDF invoice"
+    )
+    
+    # Show success message with instructions
+    st.success(f"✅ Invoice {order_info.get('invoice_number', '')} generated successfully!")
+    st.info("💡 **Tip:** Click the download button above to view the PDF. Some browsers may block embedded PDF previews for security reasons, but the download will work in all browsers.")
+    
+    # Optional: Show PDF data info
+    pdf_size_mb = len(pdf_bytes) / (1024 * 1024)
+    st.caption(f"📊 PDF size: {pdf_size_mb:.2f} MB | Generated at {datetime.datetime.now().strftime('%H:%M:%S')}")
     
     st.success(f"✅ Invoice {order_info.get('invoice_number', '')} generated and logged!")
