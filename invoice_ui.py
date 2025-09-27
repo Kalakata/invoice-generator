@@ -9,6 +9,14 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import io, base64, datetime
 
+# Configure Streamlit page for wide layout
+st.set_page_config(
+    page_title="Modern Invoice Generator",
+    page_icon="📄",
+    layout="wide",  # This makes the app use full browser width
+    initial_sidebar_state="expanded"
+)
+
 # Load translations
 with open("translations.json", "r", encoding="utf-8") as f:
     translations = json.load(f)
@@ -417,15 +425,31 @@ def build_invoice(order_info, items, lang="FR"):
 # ============ STREAMLIT APP ============
 st.title("Invoice Generator (Multi-Product, UI Input)")
 
-# Sample data button for testing
-if st.button("📝 Load Sample Data for Testing", type="secondary"):
-    st.session_state["sample_data_loaded"] = True
-    st.rerun()
-
-if st.button("🗑️ Clear All Data", type="secondary"):
-    # Clear all data including sample data flags
-    st.session_state.clear()
-    st.rerun()
+# Sample data buttons moved to sidebar
+with st.sidebar:
+    st.markdown("### 🧪 Testing Tools")
+    if st.button("📝 Load Sample Data", type="secondary", use_container_width=True):
+        st.session_state["sample_data_loaded"] = True
+        st.rerun()
+    
+    if st.button("🗑️ Clear All Data", type="secondary", use_container_width=True):
+        # Clear all data including sample data flags
+        st.session_state.clear()
+        st.rerun()
+    
+    st.markdown("---")
+    st.markdown("### 📊 Session Stats")
+    if "invoice_log" in st.session_state:
+        invoice_count = len(st.session_state["invoice_log"])
+        st.metric("Invoices Generated", invoice_count)
+    else:
+        st.metric("Invoices Generated", 0)
+    
+    if "products" in st.session_state:
+        product_count = len(st.session_state["products"])
+        st.metric("Products Added", product_count)
+    else:
+        st.metric("Products Added", 0)
 
 # Show sample data status
 if st.session_state.get("sample_data_loaded"):
@@ -433,10 +457,9 @@ if st.session_state.get("sample_data_loaded"):
 else:
     st.write("Enter invoice details:")
 
-# Language and Currency selection
-st.subheader("Language & Currency Settings")
-col1, col2 = st.columns(2)
-with col1:
+# Language and Currency selection - Moved to sidebar for more horizontal space
+with st.sidebar:
+    st.markdown("### ⚙️ Settings")
     language_options = {
         "FR": "🇫🇷 French (Français)",
         "EN": "🇬🇧 English", 
@@ -447,7 +470,6 @@ with col1:
     default_lang = 0 if not st.session_state.get("sample_data_loaded") else 1  # English for sample
     language = st.selectbox("Select Language", options=list(language_options.keys()), 
                            format_func=lambda x: language_options[x], index=default_lang)
-with col2:
     default_currency = 0 if not st.session_state.get("sample_data_loaded") else 0  # EUR for sample
     currency = st.selectbox("Select Currency", ["EUR", "USD", "GBP", "CAD", "AUD"], index=default_currency)
 
@@ -458,13 +480,15 @@ order_info["currency"] = currency
 order_info["language"] = language
 # Customer Information
 st.subheader("Customer Information")
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns([2, 2, 1])
 with col1:
     default_customer = "" if not st.session_state.get("sample_data_loaded") else "TechCorp Solutions Ltd"
     order_info["customer_name"] = st.text_input("Customer Name", value=default_customer)
 with col2:
     default_vat = "" if not st.session_state.get("sample_data_loaded") else "GB123456789"
     order_info["customer_vat"] = st.text_input("Customer VAT Number", value=default_vat)
+with col3:
+    st.markdown("<br>", unsafe_allow_html=True)  # Spacer for better alignment
 
 # Order Information
 st.subheader("Order Information")
@@ -525,21 +549,25 @@ st.subheader("Additional Information")
 default_payment = "" if not st.session_state.get("sample_data_loaded") else "PAY-REF-789456123"
 order_info["payment_ref"] = st.text_input("Payment Reference", value=default_payment)
 
-default_commercial = "" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance"
-order_info["commercial_address"] = st.text_area("Commercial Address (Company Name, Address, Country)", 
-                                               height=80, 
-                                               placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCountry Code",
-                                               value=default_commercial)
+# Addresses in horizontal layout
+col1, col2 = st.columns(2)
+with col1:
+    default_commercial = "" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance"
+    order_info["commercial_address"] = st.text_area("Commercial Address (Company Name, Address, Country)", 
+                                                   height=80, 
+                                                   placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCountry Code",
+                                                   value=default_commercial)
 
-default_shipping = "" if not st.session_state.get("sample_data_loaded") else "TechCorp Solutions Ltd\n456 Tech Street\nLondon, SW1A 1AA\nUnited Kingdom"
-order_info["shipping_address"] = st.text_area("Shipping Address (Customer Address)", 
-                                             height=80, 
-                                             placeholder="Customer Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry Code",
-                                             value=default_shipping)
+with col2:
+    default_shipping = "" if not st.session_state.get("sample_data_loaded") else "TechCorp Solutions Ltd\n456 Tech Street\nLondon, SW1A 1AA\nUnited Kingdom"
+    order_info["shipping_address"] = st.text_area("Shipping Address (Customer Address)", 
+                                                 height=80, 
+                                                 placeholder="Customer Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry Code",
+                                                 value=default_shipping)
 
 # Delivery/Shipping section with promotions
 st.subheader("Delivery/Shipping & Promotions")
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
 with col1:
     default_delivery = 0.0 if not st.session_state.get("sample_data_loaded") else 15.00
     order_info["delivery_charges"] = st.number_input(f"Delivery/Shipping Charges ({currency_symbol})", min_value=0.0, value=default_delivery)
@@ -549,12 +577,10 @@ with col2:
 with col3:
     default_discount_amount = 0.0 if not st.session_state.get("sample_data_loaded") else 0.0
     order_info["delivery_discount_amount"] = st.number_input(f"Delivery Discount Amount ({currency_symbol})", min_value=0.0, value=default_discount_amount)
+with col4:
+    default_promotion = "" if not st.session_state.get("sample_data_loaded") else "10% off delivery for orders over €100"
+    order_info["promotion_description"] = st.text_input("Promotion Description", value=default_promotion, placeholder="e.g., Free shipping over €50")
 
-# Promotion description
-default_promotion = "" if not st.session_state.get("sample_data_loaded") else "20% off shipping for orders over €100"
-order_info["promotion_description"] = st.text_input("Promotion Description", 
-                                                   placeholder="e.g., Free shipping over €50",
-                                                   value=default_promotion)
 
 # ===== Add multiple products =====
 st.subheader("Products")
