@@ -213,12 +213,30 @@ def build_invoice(order_info, items, lang="FR"):
         ]))
         story.append(customer_table)
         
-        # Add seller information if seller address is provided
+        # Add seller information if seller address is provided - more compact layout
         if order_info.get("seller_address"):
-            seller_info = f"{order_info.get('seller_name', '')}\n{order_info.get('seller_address', '')}\n{tr['vat']} {order_info.get('seller_vat', '')}"
             story.append(Spacer(1, 10))
-            story.append(Paragraph(f"<b>{tr['sold_by']}</b>", modern_subheader))
-            story.append(Paragraph(seller_info, modern_text))
+            
+            # Create a compact seller info table instead of paragraph
+            seller_info_data = [
+                [Paragraph(f"<b>{tr['sold_by']}</b>", modern_subheader), 
+                 Paragraph(f"<b>{tr['vat']}</b>", modern_subheader)],
+                [Paragraph(order_info.get('seller_name', ''), modern_text),
+                 Paragraph(order_info.get('seller_vat', ''), modern_text)],
+                [Paragraph(order_info.get('seller_address', ''), modern_text), ""]
+            ]
+            
+            seller_table = Table(seller_info_data, colWidths=[120*mm, 60*mm])
+            seller_table.setStyle(TableStyle([
+                ("BACKGROUND", (0,0), (-1,0), ModernColors.LIGHT_GREY),
+                ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
+                ("VALIGN", (0,0), (-1,-1), "TOP"),
+                ("LEFTPADDING", (0,0), (-1,-1), 8),
+                ("RIGHTPADDING", (0,0), (-1,-1), 8),
+                ("TOPPADDING", (0,0), (-1,-1), 6),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+            ]))
+            story.append(seller_table)
         
         story.append(Spacer(1, 16))
 
@@ -508,15 +526,15 @@ with col2:
 
 # Seller Information
 st.subheader("Seller Information")
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns([3, 2, 3])
 with col1:
     default_seller = "Nikilko2017 LTD" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc"
     order_info["seller_name"] = st.text_input("Seller Name", value=default_seller)
     
-    # Seller address
+    # Seller address - more compact
     default_seller_address = "" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance"
     order_info["seller_address"] = st.text_area("Seller Address", 
-                                               height=80,
+                                               height=50,
                                                placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry",
                                                value=default_seller_address)
 
