@@ -136,6 +136,12 @@ modern_table_header = ParagraphStyle("ModernTableHeader", parent=normal,
                                    spaceAfter=2,
                                    alignment=1)  # Center alignment
 
+# Special style for VAT and address table headers (white text)
+modern_white_header = ParagraphStyle("ModernWhiteHeader", parent=normal,
+                                   fontName="Helvetica-Bold", fontSize=10,
+                                   textColor=ModernColors.WHITE,
+                                   spaceAfter=3)
+
 def build_invoice(order_info, items, lang="FR"):
     tr = translations.get(lang, translations["FR"])
     currency = order_info.get("currency", "EUR")
@@ -190,8 +196,8 @@ def build_invoice(order_info, items, lang="FR"):
     # ===== Modern Customer Information =====
     if order_info.get("commercial_address") or order_info.get("shipping_address"):
         customer_info = [
-            [Paragraph(tr["commercial_address"], modern_subheader), 
-             Paragraph(tr["shipping_address"], modern_subheader)]
+            [Paragraph(tr["commercial_address"], modern_white_header), 
+             Paragraph(tr["shipping_address"], modern_white_header)]
         ]
         
         # Add customer/seller information with proper formatting
@@ -226,8 +232,8 @@ def build_invoice(order_info, items, lang="FR"):
             
             # Create a compact seller info table instead of paragraph
             seller_info_data = [
-                [Paragraph(f"<b>{tr['sold_by']}</b>", modern_subheader), 
-                 Paragraph(f"<b>{tr['vat']}</b>", modern_subheader)],
+                [Paragraph(f"<b>{tr['sold_by']}</b>", modern_white_header), 
+                 Paragraph(f"<b>{tr['vat']}</b>", modern_white_header)],
                 [Paragraph(order_info.get('seller_name', ''), modern_text),
                  Paragraph(order_info.get('seller_vat', ''), modern_text)],
                 [Paragraph(order_info.get('seller_address', ''), modern_text), ""]
@@ -373,7 +379,7 @@ def build_invoice(order_info, items, lang="FR"):
             ])
             
             discount_style = ParagraphStyle("Discount", parent=modern_text,
-                                          textColor=ModernColors.SECONDARY_BLUE,
+                                          textColor=ModernColors.PRIMARY_BLUE,
                                           fontName="Helvetica-Bold")
             rows.append([
                 Paragraph(discount_desc, discount_style),
@@ -422,10 +428,10 @@ def build_invoice(order_info, items, lang="FR"):
     
     # VAT breakdown table with modern styling
     vat_breakdown_table = [
-        [Paragraph(tr["totals_vat_rate"], modern_subheader), 
-         Paragraph(tr["totals_total_ht"], modern_subheader),
-         Paragraph(tr["totals_vat"], modern_subheader), 
-         Paragraph(tr["totals_total"], modern_subheader)]
+        [Paragraph(tr["totals_vat_rate"], modern_white_header), 
+         Paragraph(tr["totals_total_ht"], modern_white_header),
+         Paragraph(tr["totals_vat"], modern_white_header), 
+         Paragraph(tr["totals_total"], modern_white_header)]
     ]
     
     for vat_rate, amounts in sorted(vat_breakdown.items()):
@@ -438,7 +444,7 @@ def build_invoice(order_info, items, lang="FR"):
     
     vat_table = Table(vat_breakdown_table, colWidths=[35*mm, 45*mm, 35*mm, 35*mm])
     vat_table.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), ModernColors.SECONDARY_BLUE),
+        ("BACKGROUND", (0,0), (-1,0), ModernColors.PRIMARY_BLUE),
         ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
         ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
         ("ALIGN", (1,0), (-1,-1), "RIGHT"),
@@ -485,6 +491,9 @@ with st.sidebar:
     if st.button("🗑️ Clear All Data", type="secondary", use_container_width=True):
         # Clear all data including sample data flags
         st.session_state.clear()
+        # Set a flag to indicate data was cleared and initialize empty products list
+        st.session_state["data_cleared"] = True
+        st.session_state["products"] = []
         st.rerun()
     
     st.markdown("---")
@@ -517,10 +526,22 @@ with st.sidebar:
         "ES": "🇪🇸 Spanish (Español)",
         "DE": "🇩🇪 German (Deutsch)"
     }
-    default_lang = 0 if not st.session_state.get("sample_data_loaded") else 1  # English for sample
+    # Helper function to get default values based on sample data and cleared state
+    def get_default_value(empty_value, sample_value):
+        data_cleared = st.session_state.get("data_cleared", False)
+        if data_cleared:
+            return empty_value
+        return sample_value if st.session_state.get("sample_data_loaded") else empty_value
+    
+    # Reset cleared flag after using it
+    data_cleared = st.session_state.get("data_cleared", False)
+    if data_cleared:
+        st.session_state["data_cleared"] = False
+    
+    default_lang = get_default_value(0, 1)  # 0 = French, 1 = English for sample
     language = st.selectbox("Select Language", options=list(language_options.keys()), 
                            format_func=lambda x: language_options[x], index=default_lang)
-    default_currency = 0 if not st.session_state.get("sample_data_loaded") else 0  # EUR for sample
+    default_currency = get_default_value(0, 0)  # 0 = EUR for both
     currency = st.selectbox("Select Currency", ["EUR", "USD", "GBP", "CAD", "AUD"], index=default_currency)
 
 currency_symbol = {"EUR": "€", "USD": "$", "GBP": "£", "CAD": "C$", "AUD": "A$"}[currency]
@@ -532,10 +553,10 @@ order_info["language"] = language
 st.subheader("Customer Information")
 col1, col2, col3 = st.columns([2, 2, 1])
 with col1:
-    default_customer = "" if not st.session_state.get("sample_data_loaded") else "TechCorp Solutions Ltd"
+    default_customer = get_default_value("", "TechCorp Solutions Ltd")
     order_info["customer_name"] = st.text_input("Customer Name", value=default_customer)
 with col2:
-    default_vat = "" if not st.session_state.get("sample_data_loaded") else "GB123456789"
+    default_vat = get_default_value("", "GB123456789")
     order_info["customer_vat"] = st.text_input("Customer VAT Number", value=default_vat)
 with col3:
     st.markdown("<br>", unsafe_allow_html=True)  # Spacer for better alignment
@@ -544,11 +565,11 @@ with col3:
 st.subheader("Order Information")
 col1, col2 = st.columns(2)
 with col1:
-    default_order = "" if not st.session_state.get("sample_data_loaded") else "ORD-2024-001234"
+    default_order = get_default_value("", "ORD-2024-001234")
     order_info["order_number"] = st.text_input("Order Number", value=default_order)
     order_info["order_date"] = st.date_input("Order Date", datetime.date.today())
 with col2:
-    default_invoice = "" if not st.session_state.get("sample_data_loaded") else "INV-2024-005678"
+    default_invoice = get_default_value("", "INV-2024-005678")
     order_info["invoice_number"] = st.text_input("Invoice Number", value=default_invoice)
     order_info["invoice_date"] = st.date_input("Invoice Date", datetime.date.today())
 
@@ -556,11 +577,11 @@ with col2:
 st.subheader("Seller Information")
 col1, col2 = st.columns(2)
 with col1:
-    default_seller = "Nikilko2017 LTD" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc"
+    default_seller = get_default_value("Nikilko2017 LTD", "Digital Innovations Inc")
     order_info["seller_name"] = st.text_input("Seller Name", value=default_seller)
     
     # Seller address
-    default_seller_address = "" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance"
+    default_seller_address = get_default_value("Tsar Asen 54 str. en. 2, fl2, ap.11\nBurgas, 8000, BG", "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance")
     order_info["seller_address"] = st.text_area("Seller Address", 
                                                height=80,
                                                placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry",
@@ -605,20 +626,20 @@ with col2:
 
 # Additional fields from translations
 st.subheader("Additional Information")
-default_payment = "" if not st.session_state.get("sample_data_loaded") else "PAY-REF-789456123"
+default_payment = get_default_value("", "PAY-REF-789456123")
 order_info["payment_ref"] = st.text_input("Payment Reference", value=default_payment)
 
 # Addresses in horizontal layout
 col1, col2 = st.columns(2)
 with col1:
-    default_commercial = "" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance"
+    default_commercial = get_default_value("", "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance")
     order_info["commercial_address"] = st.text_area("Commercial Address (Company Name, Address, Country)", 
                                                    height=80, 
                                                    placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCountry Code",
                                                    value=default_commercial)
 
 with col2:
-    default_shipping = "" if not st.session_state.get("sample_data_loaded") else "TechCorp Solutions Ltd\n456 Tech Street\nLondon, SW1A 1AA\nUnited Kingdom"
+    default_shipping = get_default_value("", "TechCorp Solutions Ltd\n456 Tech Street\nLondon, SW1A 1AA\nUnited Kingdom")
     order_info["shipping_address"] = st.text_area("Shipping Address (Customer Address)", 
                                                  height=80, 
                                                  placeholder="Customer Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry Code",
@@ -628,16 +649,16 @@ with col2:
 st.subheader("Delivery/Shipping & Promotions")
 col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
 with col1:
-    default_delivery = 0.0 if not st.session_state.get("sample_data_loaded") else 15.00
-    order_info["delivery_charges"] = st.number_input(f"Delivery/Shipping Charges ({currency_symbol})", min_value=0.0, value=default_delivery)
+    default_delivery = get_default_value(0.0, 15.00)
+    order_info["delivery_charges"] = st.number_input(f"Delivery/Shipping Charges ({currency_symbol})", min_value=0.0, value=default_delivery, step=0.001, format="%.3f")
 with col2:
-    default_discount_percent = 0.0 if not st.session_state.get("sample_data_loaded") else 20.0
-    order_info["delivery_discount_percent"] = st.number_input("Delivery Discount (%)", min_value=0.0, max_value=100.0, value=default_discount_percent)
+    default_discount_percent = get_default_value(0.0, 20.0)
+    order_info["delivery_discount_percent"] = st.number_input("Delivery Discount (%)", min_value=0.0, max_value=100.0, value=default_discount_percent, step=0.001, format="%.3f")
 with col3:
-    default_discount_amount = 0.0 if not st.session_state.get("sample_data_loaded") else 0.0
-    order_info["delivery_discount_amount"] = st.number_input(f"Delivery Discount Amount ({currency_symbol})", min_value=0.0, value=default_discount_amount)
+    default_discount_amount = get_default_value(0.0, 0.0)
+    order_info["delivery_discount_amount"] = st.number_input(f"Delivery Discount Amount ({currency_symbol})", min_value=0.0, value=default_discount_amount, step=0.001, format="%.3f")
 with col4:
-    default_promotion = "" if not st.session_state.get("sample_data_loaded") else "10% off delivery for orders over €100"
+    default_promotion = get_default_value("", "10% off delivery for orders over €100")
     order_info["promotion_description"] = st.text_input("Promotion Description", value=default_promotion, placeholder="e.g., Free shipping over €50")
 
 
@@ -687,11 +708,11 @@ with st.form("add_product_form"):
     with col3:
         qty = st.number_input("Qty", min_value=1, value=1, key="qty")
     with col4:
-        unit_price = st.number_input(f"Unit Price HT ({currency_symbol})", min_value=0.0, value=10.0, key="price")
+        unit_price = st.number_input(f"Unit Price HT ({currency_symbol})", min_value=0.0, value=10.0, step=0.001, format="%.3f", key="price")
     with col5:
-        unit_price_ttc = st.number_input(f"Unit Price TTC ({currency_symbol})", min_value=0.0, value=12.0, key="price_ttc")
+        unit_price_ttc = st.number_input(f"Unit Price TTC ({currency_symbol})", min_value=0.0, value=12.0, step=0.001, format="%.3f", key="price_ttc")
     with col6:
-        vat_rate = st.number_input("VAT %", min_value=0.0, value=20.0, key="vat")
+        vat_rate = st.number_input("VAT %", min_value=0.0, value=20.0, step=0.001, format="%.3f", key="vat")
 
     submitted = st.form_submit_button("Add product")
     if submitted and desc:
