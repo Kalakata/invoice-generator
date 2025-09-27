@@ -36,7 +36,8 @@ def add_to_session_log(order_info, products, pdf_bytes):
         },
         "seller_info": {
             "seller_name": order_info.get("seller_name", ""),
-            "seller_vat": order_info.get("seller_vat", "")
+            "seller_vat": order_info.get("seller_vat", ""),
+            "seller_address": order_info.get("seller_address", "")
         },
         "order_details": {
             "order_date": str(order_info.get("order_date", "")),
@@ -183,24 +184,22 @@ def build_invoice(order_info, items, lang="FR"):
     if order_info.get("commercial_address") or order_info.get("shipping_address"):
         customer_info = [
             [Paragraph(tr["commercial_address"], modern_subheader), 
-             Paragraph(tr["shipping_address"], modern_subheader), 
-             Paragraph(tr["sold_by"], modern_subheader)]
+             Paragraph(tr["shipping_address"], modern_subheader)]
         ]
         
         # Add customer/seller information with proper formatting
         commercial_text = order_info.get("commercial_address", "")
         shipping_text = order_info.get("shipping_address", "")
         if order_info.get("customer_vat"):
-            shipping_text += f"\nTVA {order_info['customer_vat']}"
+            shipping_text += f"\n{tr['vat']} {order_info['customer_vat']}"
         seller_text = f"{order_info['seller_name']}\n{order_info['seller_vat']}"
         
         customer_info.append([
             Paragraph(commercial_text, modern_text),
-            Paragraph(shipping_text, modern_text), 
-            Paragraph(seller_text, modern_text)
+            Paragraph(shipping_text, modern_text)
         ])
         
-        customer_table = Table(customer_info, colWidths=[60*mm, 60*mm, 60*mm])
+        customer_table = Table(customer_info, colWidths=[90*mm, 90*mm])
         customer_table.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,0), ModernColors.PRIMARY_BLUE),
             ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
@@ -213,10 +212,18 @@ def build_invoice(order_info, items, lang="FR"):
             ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
         ]))
         story.append(customer_table)
+        
+        # Add seller information if seller address is provided
+        if order_info.get("seller_address"):
+            seller_info = f"{order_info.get('seller_name', '')}\n{order_info.get('seller_address', '')}\n{tr['vat']} {order_info.get('seller_vat', '')}"
+            story.append(Spacer(1, 10))
+            story.append(Paragraph(f"<b>{tr['sold_by']}</b>", modern_subheader))
+            story.append(Paragraph(seller_info, modern_text))
+        
         story.append(Spacer(1, 16))
 
     # ===== Modern Order Information =====
-    story.append(Paragraph("Informations de la commande", modern_header))
+    story.append(Paragraph(tr["order_info_header"], modern_header))
     story.append(Spacer(1, 8))
     
     order_info_table = [
@@ -240,7 +247,7 @@ def build_invoice(order_info, items, lang="FR"):
     story.append(Spacer(1, 16))
     
     # ===== Modern Invoice Details =====
-    story.append(Paragraph("Détails de la facture", modern_header))
+    story.append(Paragraph(tr["invoice_details_header"], modern_header))
     story.append(Spacer(1, 8))
 
     # ===== Modern Items Table =====
@@ -406,9 +413,6 @@ def build_invoice(order_info, items, lang="FR"):
                                                    fontSize=8)))
     story.append(Spacer(1, 12))
     
-    # Shipping information
-    story.append(Paragraph(tr["shipped_from"], modern_small))
-    story.append(Spacer(1, 8))
     
     # Customer service information
     story.append(Paragraph(tr["customer_service"], modern_small))
@@ -508,7 +512,16 @@ col1, col2 = st.columns(2)
 with col1:
     default_seller = "Nikilko2017 LTD" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc"
     order_info["seller_name"] = st.text_input("Seller Name", value=default_seller)
+    
+    # Seller address
+    default_seller_address = "" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance"
+    order_info["seller_address"] = st.text_area("Seller Address", 
+                                               height=80,
+                                               placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry",
+                                               value=default_seller_address)
+
 with col2:
+    st.markdown("**VAT Numbers:**")
     # VAT number dropdown with country abbreviations (including Bulgaria)
     vat_options = {
         "CZ685067700": "CZ685067700 (CZ)",

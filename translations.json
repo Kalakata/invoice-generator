@@ -27,8 +27,10 @@
     "totals_total": "Total",
     "totals_invoice_total": "Facture Total",
     "page": "Page",
+    "order_info_header": "Informations de la commande",
+    "invoice_details_header": "Détails de la facture",
     "customer_service": "Veuillez contacter le Service Client en visitant le lien suivant: www.amazon.fr/contact-us",
-    "legal": "Mentions obligatoires : Escompte pour paiement anticipé : néant. En cas de paiement de retard, le taux d’intérêt des pénalités applicable est égal à 1,5 % par mois. Une indemnité forfaitaire de 40 euros est aussi applicable au titre des frais de recouvrement."
+    "legal": "Mentions obligatoires : Escompte pour paiement anticipé : néant. En cas de paiement de retard, le taux d'intérêt des pénalités applicable est égal à 1,5 % par mois. Une indemnité forfaitaire de 40 euros est aussi applicable au titre des frais de recouvrement."
   },
     "EN": {
     "shipping_discount": "Promotion",    
@@ -58,6 +60,8 @@
     "totals_total": "Total",
     "totals_invoice_total": "Invoice total",
     "page": "Page",
+    "order_info_header": "Order Information",
+    "invoice_details_header": "Invoice Details",
     "customer_service": "For customer support visit www.amazon.co.uk/contact-us",
     "legal": "No early payment discount. Late payments accrue interest at 1.5% per month. A fixed fee of £40 is also applicable as recovery costs."
   },
@@ -89,6 +93,8 @@
     "totals_total": "Totale",
     "totals_invoice_total": "Totale fattura",
     "page": "Pagina",
+    "order_info_header": "Informazioni ordine",
+    "invoice_details_header": "Dettagli fattura",
     "customer_service": "Per domande relative al tuo ordine, ti preghiamo di visitare il sito www.amazon.it/contact-us",
     "legal": "(1) Inversione contabile - Articolo 194 Direttiva 2006/112/EC"
   },
@@ -120,6 +126,8 @@
     "totals_total": "Total",
     "totals_invoice_total": "Importe debido",
     "page": "Página",
+    "order_info_header": "Información del pedido",
+    "invoice_details_header": "Detalles de la factura",
     "customer_service": "Si tienes preguntas sobre tus pedidos, visita https://www.amazon.es/contacto",
     "legal": "(1) Inversión del sujeto pasivo – Artículo 194 Directiva 2006/112/EC"
   },
@@ -151,6 +159,8 @@
     "totals_total": "USt. Gesamt",
     "totals_invoice_total": "Gesamtpreis",
     "page": "Seite",
+    "order_info_header": "Bestellinformationen",
+    "invoice_details_header": "Rechnungsdetails",
     "customer_service": "Um unseren Kundenservice zu kontaktieren, besuche www.amazon.de/contact-us",
     "legal": ""
   }
