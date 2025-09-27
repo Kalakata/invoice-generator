@@ -103,31 +103,31 @@ class ModernColors:
     WARNING_ORANGE = colors.HexColor('#F39C12')    # Warning
     ERROR_RED = colors.HexColor('#E74C3C')         # Error
 
-# Modern paragraph styles
+# Modern paragraph styles - Compact for single page
 modern_title = ParagraphStyle("ModernTitle", parent=normal, 
-                             fontName="Helvetica-Bold", fontSize=24, 
+                             fontName="Helvetica-Bold", fontSize=20, 
                              textColor=ModernColors.DARK_GREY,
-                             spaceAfter=20)
+                             spaceAfter=12)
 
 modern_header = ParagraphStyle("ModernHeader", parent=normal,
-                              fontName="Helvetica-Bold", fontSize=14,
+                              fontName="Helvetica-Bold", fontSize=12,
                               textColor=ModernColors.PRIMARY_BLUE,
-                              spaceAfter=8)
+                              spaceAfter=4)
 
 modern_subheader = ParagraphStyle("ModernSubheader", parent=normal,
-                                 fontName="Helvetica-Bold", fontSize=12,
+                                 fontName="Helvetica-Bold", fontSize=10,
                                  textColor=ModernColors.DARK_GREY,
-                                 spaceAfter=6)
+                                 spaceAfter=3)
 
 modern_text = ParagraphStyle("ModernText", parent=normal,
-                            fontName="Helvetica", fontSize=10,
+                            fontName="Helvetica", fontSize=9,
                             textColor=ModernColors.DARK_GREY,
-                            spaceAfter=4)
+                            spaceAfter=2)
 
 modern_small = ParagraphStyle("ModernSmall", parent=normal,
-                             fontName="Helvetica", fontSize=9,
+                             fontName="Helvetica", fontSize=8,
                              textColor=colors.HexColor('#7F8C8D'),
-                             spaceAfter=4)
+                             spaceAfter=2)
 
 def build_invoice(order_info, items, lang="FR"):
     tr = translations.get(lang, translations["FR"])
@@ -135,8 +135,8 @@ def build_invoice(order_info, items, lang="FR"):
     currency_symbol = {"EUR": "€", "USD": "$", "GBP": "£", "CAD": "C$", "AUD": "A$"}[currency]
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4,
-                            leftMargin=20*mm, rightMargin=20*mm,
-                            topMargin=20*mm, bottomMargin=20*mm)
+                            leftMargin=15*mm, rightMargin=15*mm,
+                            topMargin=15*mm, bottomMargin=15*mm)
 
     story = []
 
@@ -167,18 +167,18 @@ def build_invoice(order_info, items, lang="FR"):
         ("BACKGROUND", (0,0), (-1,0), ModernColors.LIGHT_GREY),
         ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
         ("VALIGN", (0,0), (-1,-1), "TOP"),
-        ("LEFTPADDING", (0,0), (-1,-1), 10),
-        ("RIGHTPADDING", (0,0), (-1,-1), 10),
-        ("TOPPADDING", (0,0), (-1,-1), 8),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
+        ("LEFTPADDING", (0,0), (-1,-1), 6),
+        ("RIGHTPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
         ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
     ]))
     story.append(header_table)
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 8))
     
     # Customer name with modern styling
     story.append(Paragraph(order_info.get("customer_name", ""), modern_header))
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 6))
 
     # ===== Modern Customer Information =====
     if order_info.get("commercial_address") or order_info.get("shipping_address"):
@@ -205,17 +205,17 @@ def build_invoice(order_info, items, lang="FR"):
             ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
             ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
             ("VALIGN", (0,0), (-1,-1), "TOP"),
-            ("LEFTPADDING", (0,0), (-1,-1), 12),
-            ("RIGHTPADDING", (0,0), (-1,-1), 12),
-            ("TOPPADDING", (0,0), (-1,-1), 10),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+            ("LEFTPADDING", (0,0), (-1,-1), 8),
+            ("RIGHTPADDING", (0,0), (-1,-1), 8),
+            ("TOPPADDING", (0,0), (-1,-1), 6),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
             ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
         ]))
         story.append(customer_table)
         
         # Add seller information if seller address is provided - more compact layout
         if order_info.get("seller_address"):
-            story.append(Spacer(1, 10))
+            story.append(Spacer(1, 6))
             
             # Create a compact seller info table instead of paragraph
             seller_info_data = [
@@ -231,18 +231,18 @@ def build_invoice(order_info, items, lang="FR"):
                 ("BACKGROUND", (0,0), (-1,0), ModernColors.LIGHT_GREY),
                 ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
                 ("VALIGN", (0,0), (-1,-1), "TOP"),
-                ("LEFTPADDING", (0,0), (-1,-1), 8),
-                ("RIGHTPADDING", (0,0), (-1,-1), 8),
-                ("TOPPADDING", (0,0), (-1,-1), 6),
-                ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+                ("LEFTPADDING", (0,0), (-1,-1), 6),
+                ("RIGHTPADDING", (0,0), (-1,-1), 6),
+                ("TOPPADDING", (0,0), (-1,-1), 4),
+                ("BOTTOMPADDING", (0,0), (-1,-1), 4),
             ]))
             story.append(seller_table)
         
-        story.append(Spacer(1, 16))
+        story.append(Spacer(1, 8))
 
     # ===== Modern Order Information =====
     story.append(Paragraph(tr["order_info_header"], modern_header))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 4))
     
     order_info_table = [
         [Paragraph(tr["order_date"], modern_subheader), str(order_info["order_date"])],
@@ -255,18 +255,18 @@ def build_invoice(order_info, items, lang="FR"):
         ("BACKGROUND", (0,0), (-1,0), ModernColors.LIGHT_GREY),
         ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
         ("VALIGN", (0,0), (-1,-1), "TOP"),
-        ("LEFTPADDING", (0,0), (-1,-1), 10),
-        ("RIGHTPADDING", (0,0), (-1,-1), 10),
-        ("TOPPADDING", (0,0), (-1,-1), 8),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
+        ("LEFTPADDING", (0,0), (-1,-1), 6),
+        ("RIGHTPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
         ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
     ]))
     story.append(order_table)
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 8))
     
     # ===== Modern Invoice Details =====
     story.append(Paragraph(tr["invoice_details_header"], modern_header))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 4))
 
     # ===== Modern Items Table =====
     headers = [tr["description"], tr["qty"], tr["unit_price_ht"], tr["vat_rate"], tr["unit_price_ttc"], tr["total_ttc"]]
@@ -366,7 +366,7 @@ def build_invoice(order_info, items, lang="FR"):
             ])
         total_ttc += final_delivery_charges
 
-    items_table = Table(rows, colWidths=[70*mm, 15*mm, 25*mm, 20*mm, 25*mm, 25*mm])
+    items_table = Table(rows, colWidths=[65*mm, 15*mm, 22*mm, 18*mm, 22*mm, 22*mm])
     items_table.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,0), ModernColors.PRIMARY_BLUE),
         ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
@@ -380,16 +380,16 @@ def build_invoice(order_info, items, lang="FR"):
         ("LINEBELOW", (0,0), (-1,0), 2, ModernColors.PRIMARY_BLUE),
     ]))
     story.append(items_table)
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 8))
 
     # ===== Modern Totals =====
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 8))
     
     # Invoice Total with modern styling
     total_style = ParagraphStyle("InvoiceTotal", parent=modern_title,
-                                fontName="Helvetica-Bold", fontSize=18,
+                                fontName="Helvetica-Bold", fontSize=16,
                                 textColor=ModernColors.PRIMARY_BLUE,
-                                spaceAfter=16)
+                                spaceAfter=8)
     story.append(Paragraph(f"{tr['totals_invoice_total']} {total_ttc:.2f} {currency_symbol}", total_style))
     
     # VAT breakdown table with modern styling
@@ -414,27 +414,27 @@ def build_invoice(order_info, items, lang="FR"):
         ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
         ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
         ("ALIGN", (1,0), (-1,-1), "RIGHT"),
-        ("LEFTPADDING", (0,0), (-1,-1), 10),
-        ("RIGHTPADDING", (0,0), (-1,-1), 10),
-        ("TOPPADDING", (0,0), (-1,-1), 8),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
+        ("LEFTPADDING", (0,0), (-1,-1), 6),
+        ("RIGHTPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
         ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
     ]))
     story.append(vat_table)
     
     # ===== Modern Footer =====
-    story.append(Spacer(1, 24))
+    story.append(Spacer(1, 12))
     
     # Footer divider
     story.append(Paragraph("─" * 80, ParagraphStyle("Divider", parent=normal, 
                                                    textColor=ModernColors.BORDER_GREY,
                                                    fontSize=8)))
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 6))
     
     
     # Customer service information
     story.append(Paragraph(tr["customer_service"], modern_small))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 4))
     
     # Legal mentions
     story.append(Paragraph(tr["legal"], modern_small))
@@ -526,15 +526,15 @@ with col2:
 
 # Seller Information
 st.subheader("Seller Information")
-col1, col2, col3 = st.columns([3, 2, 3])
+col1, col2 = st.columns(2)
 with col1:
     default_seller = "Nikilko2017 LTD" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc"
     order_info["seller_name"] = st.text_input("Seller Name", value=default_seller)
     
-    # Seller address - more compact
+    # Seller address
     default_seller_address = "" if not st.session_state.get("sample_data_loaded") else "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance"
     order_info["seller_address"] = st.text_area("Seller Address", 
-                                               height=50,
+                                               height=80,
                                                placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry",
                                                value=default_seller_address)
 
