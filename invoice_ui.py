@@ -54,6 +54,7 @@ def add_to_session_log(order_info, products, pdf_bytes):
         },
         "delivery_info": {
             "delivery_charges": order_info.get("delivery_charges", 0),
+            "delivery_vat_rate": order_info.get("delivery_vat_rate", 0),
             "delivery_discount_percent": order_info.get("delivery_discount_percent", 0),
             "delivery_discount_amount": order_info.get("delivery_discount_amount", 0),
             "promotion_description": order_info.get("promotion_description", "")
@@ -347,6 +348,7 @@ def build_invoice(order_info, items, lang="FR"):
 
     # Add shipping line with discounts if delivery charges > 0
     delivery_charges = float(order_info.get("delivery_charges", 0))
+    delivery_vat_rate = float(order_info.get("delivery_vat_rate", 0))
     delivery_discount_percent = float(order_info.get("delivery_discount_percent", 0))
     delivery_discount_amount = float(order_info.get("delivery_discount_amount", 0))
     
@@ -354,7 +356,11 @@ def build_invoice(order_info, items, lang="FR"):
         # Calculate discount
         discount_from_percent = delivery_charges * (delivery_discount_percent / 100)
         total_discount = max(discount_from_percent, delivery_discount_amount)
-        final_delivery_charges = max(0, delivery_charges - total_discount)
+        final_delivery_charges_ht = max(0, delivery_charges - total_discount)
+        
+        # Calculate VAT on delivery charges
+        delivery_vat_amount = final_delivery_charges_ht * (delivery_vat_rate / 100)
+        final_delivery_charges_ttc = final_delivery_charges_ht + delivery_vat_amount
         
         # Build delivery description with discount info
         delivery_desc = tr["delivery"]
@@ -378,6 +384,9 @@ def build_invoice(order_info, items, lang="FR"):
                 Paragraph(f"{delivery_charges:.2f} {currency_symbol}", modern_text)
             ])
             
+            # Calculate discount VAT amount
+            discount_vat_amount = total_discount * (delivery_vat_rate / 100)
+            
             discount_style = ParagraphStyle("Discount", parent=modern_text,
                                           textColor=ModernColors.PRIMARY_BLUE,
                                           fontName="Helvetica-Bold")
@@ -385,20 +394,32 @@ def build_invoice(order_info, items, lang="FR"):
                 Paragraph(discount_desc, discount_style),
                 Paragraph("1", modern_text),
                 Paragraph(f"-{total_discount:.2f} {currency_symbol}", discount_style),
-                Paragraph("0.0 %", modern_text),
-                Paragraph(f"-{total_discount:.2f} {currency_symbol}", discount_style),
-                Paragraph(f"-{total_discount:.2f} {currency_symbol}", discount_style)
+                Paragraph(f"{delivery_vat_rate:.1f} %", modern_text),
+                Paragraph(f"-{total_discount + discount_vat_amount:.2f} {currency_symbol}", discount_style),
+                Paragraph(f"-{total_discount + discount_vat_amount:.2f} {currency_symbol}", discount_style)
             ])
+            
+            # Add discount to VAT breakdown (using delivery VAT rate)
+            if delivery_vat_rate not in vat_breakdown:
+                vat_breakdown[delivery_vat_rate] = {"ht": 0, "vat": 0}
+            vat_breakdown[delivery_vat_rate]["ht"] -= total_discount  # Subtract discount
+            vat_breakdown[delivery_vat_rate]["vat"] -= discount_vat_amount  # Subtract discount VAT
         else:
             rows.append([
                 Paragraph(delivery_desc, modern_text),
                 Paragraph("1", modern_text),
-                Paragraph(f"{delivery_charges:.2f} {currency_symbol}", modern_text),
-                Paragraph("0.0 %", modern_text),
-                Paragraph(f"{final_delivery_charges:.2f} {currency_symbol}", modern_text),
-                Paragraph(f"{final_delivery_charges:.2f} {currency_symbol}", modern_text)
+                Paragraph(f"{final_delivery_charges_ht:.2f} {currency_symbol}", modern_text),
+                Paragraph(f"{delivery_vat_rate:.1f} %", modern_text),
+                Paragraph(f"{final_delivery_charges_ttc:.2f} {currency_symbol}", modern_text),
+                Paragraph(f"{final_delivery_charges_ttc:.2f} {currency_symbol}", modern_text)
             ])
-        total_ttc += final_delivery_charges
+        total_ttc += final_delivery_charges_ttc
+        
+        # Add delivery charges to VAT breakdown
+        if delivery_vat_rate not in vat_breakdown:
+            vat_breakdown[delivery_vat_rate] = {"ht": 0, "vat": 0}
+        vat_breakdown[delivery_vat_rate]["ht"] += final_delivery_charges_ht
+        vat_breakdown[delivery_vat_rate]["vat"] += delivery_vat_amount
 
     items_table = Table(rows, colWidths=[60*mm, 15*mm, 20*mm, 16*mm, 20*mm, 20*mm])
     items_table.setStyle(TableStyle([
@@ -647,17 +668,20 @@ with col2:
 
 # Delivery/Shipping section with promotions
 st.subheader("Delivery/Shipping & Promotions")
-col1, col2, col3, col4 = st.columns([2, 2, 2, 3])
+col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 2])
 with col1:
     default_delivery = get_default_value(0.0, 15.00)
     order_info["delivery_charges"] = st.number_input(f"Delivery/Shipping Charges ({currency_symbol})", min_value=0.0, value=default_delivery, step=0.001, format="%.3f")
 with col2:
+    default_delivery_vat = get_default_value(0.0, 20.0)
+    order_info["delivery_vat_rate"] = st.number_input("Delivery VAT (%)", min_value=0.0, max_value=100.0, value=default_delivery_vat, step=0.001, format="%.3f")
+with col3:
     default_discount_percent = get_default_value(0.0, 20.0)
     order_info["delivery_discount_percent"] = st.number_input("Delivery Discount (%)", min_value=0.0, max_value=100.0, value=default_discount_percent, step=0.001, format="%.3f")
-with col3:
+with col4:
     default_discount_amount = get_default_value(0.0, 0.0)
     order_info["delivery_discount_amount"] = st.number_input(f"Delivery Discount Amount ({currency_symbol})", min_value=0.0, value=default_discount_amount, step=0.001, format="%.3f")
-with col4:
+with col5:
     default_promotion = get_default_value("", "10% off delivery for orders over €100")
     order_info["promotion_description"] = st.text_input("Promotion Description", value=default_promotion, placeholder="e.g., Free shipping over €50")
 
