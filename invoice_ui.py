@@ -65,7 +65,7 @@ def add_to_session_log(order_info, products, pdf_bytes):
                 "asin": product.get("asin", ""),
                 "quantity": product.get("qty", 0),
                 "unit_price_ht": product.get("unit_price", 0),
-                "unit_price_ttc": product.get("unit_price_ttc", 0),
+                "unit_price_ttc": product.get("unit_price", 0) * (1 + product.get("vat_rate", 0) / 100),  # Calculated TTC
                 "vat_rate": product.get("vat_rate", 0)
             }
             for product in products
@@ -315,9 +315,11 @@ def build_invoice(order_info, items, lang="FR"):
 
     for _, item in items.iterrows():
         qty = float(item["qty"])
-        unit_price = float(item["unit_price"])
-        unit_price_ttc = float(item.get("unit_price_ttc", unit_price * (1 + float(item["vat_rate"])/100)))
+        unit_price = float(item["unit_price"])  # This is the HT price (excluding VAT)
         vat_rate = float(item["vat_rate"])
+        
+        # Calculate TTC price from HT price and VAT rate (like delivery charges)
+        unit_price_ttc = unit_price * (1 + vat_rate / 100)
         line_ht = qty * unit_price
         line_vat = line_ht * (vat_rate / 100)
         line_ttc = line_ht + line_vat
@@ -732,20 +734,28 @@ with st.form("add_product_form"):
     with col3:
         qty = st.number_input("Qty", min_value=1, value=1, key="qty")
     with col4:
-        unit_price = st.number_input(f"Unit Price HT ({currency_symbol})", min_value=0.0, value=10.0, step=0.001, format="%.3f", key="price")
+        unit_price = st.number_input(f"Unit Price HT ({currency_symbol})", min_value=0.0, value=10.0, step=0.001, format="%.3f", key="price", help="Price excluding VAT")
     with col5:
-        unit_price_ttc = st.number_input(f"Unit Price TTC ({currency_symbol})", min_value=0.0, value=12.0, step=0.001, format="%.3f", key="price_ttc")
-    with col6:
+        # Calculate TTC price automatically
         vat_rate = st.number_input("VAT %", min_value=0.0, value=20.0, step=0.001, format="%.3f", key="vat")
+        # Display calculated TTC price
+        if unit_price > 0 and vat_rate >= 0:
+            calculated_ttc = unit_price * (1 + vat_rate / 100)
+            st.metric("Unit Price TTC", f"{calculated_ttc:.2f} {currency_symbol}", help="Automatically calculated: HT + VAT")
+        else:
+            st.metric("Unit Price TTC", f"0.00 {currency_symbol}", help="Automatically calculated: HT + VAT")
+    with col6:
+        st.write("")  # Empty space for layout
 
     submitted = st.form_submit_button("Add product")
     if submitted and desc:
+        # Calculate TTC price for display purposes
+        calculated_ttc = unit_price * (1 + vat_rate / 100)
         st.session_state["products"].append({
             "product_description": desc,
             "asin": asin,
             "qty": qty,
-            "unit_price": unit_price,
-            "unit_price_ttc": unit_price_ttc,
+            "unit_price": unit_price,  # Store HT price (excluding VAT)
             "vat_rate": vat_rate
         })
 
@@ -765,12 +775,17 @@ if st.session_state["products"]:
         with col3:
             st.write(f"Price HT: {product['unit_price']:.2f} {currency_symbol}")
         with col4:
-            st.write(f"Price TTC: {product['unit_price_ttc']:.2f} {currency_symbol}")
+            # Calculate TTC price from stored HT price and VAT rate
+            calculated_ttc = product['unit_price'] * (1 + product['vat_rate'] / 100)
+            st.write(f"Price TTC: {calculated_ttc:.2f} {currency_symbol}")
         with col5:
             st.write(f"VAT: {product['vat_rate']:.1f}%")
         with col6:
-            total = product['qty'] * product['unit_price_ttc']
-            st.write(f"Total: {total:.2f} {currency_symbol}")
+            # Calculate total using HT price + VAT
+            total_ht = product['qty'] * product['unit_price']
+            total_vat = total_ht * (product['vat_rate'] / 100)
+            total_ttc = total_ht + total_vat
+            st.write(f"Total: {total_ttc:.2f} {currency_symbol}")
         with col7:
             if st.button("Remove", key=f"remove_{i}", type="secondary"):
                 st.session_state["products"].pop(i)
