@@ -322,7 +322,7 @@ def build_invoice(order_info, items, lang="FR"):
         
         rows.append([
             Paragraph(product_desc, modern_text),
-            Paragraph(str(qty), modern_text),
+            Paragraph(str(int(qty)), modern_text),
             Paragraph(f"{unit_price:.2f} {currency_symbol}", modern_text),
             Paragraph(f"{vat_rate:.1f} %", modern_text),
             Paragraph(f"{unit_price_ttc:.2f} {currency_symbol}", modern_text),
@@ -716,7 +716,7 @@ if st.session_state["products"]:
             if product.get('asin'):
                 st.write(f"ASIN: {product['asin']}")
         with col2:
-            st.write(f"Qty: {product['qty']}")
+            st.write(f"Qty: {int(product['qty'])}")
         with col3:
             st.write(f"Price HT: {product['unit_price']:.2f} {currency_symbol}")
         with col4:
