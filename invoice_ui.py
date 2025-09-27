@@ -129,6 +129,13 @@ modern_small = ParagraphStyle("ModernSmall", parent=normal,
                              textColor=colors.HexColor('#7F8C8D'),
                              spaceAfter=2)
 
+# Special compact style for table headers
+modern_table_header = ParagraphStyle("ModernTableHeader", parent=normal,
+                                   fontName="Helvetica-Bold", fontSize=8,
+                                   textColor=ModernColors.WHITE,
+                                   spaceAfter=2,
+                                   alignment=1)  # Center alignment
+
 def build_invoice(order_info, items, lang="FR"):
     tr = translations.get(lang, translations["FR"])
     currency = order_info.get("currency", "EUR")
@@ -270,8 +277,29 @@ def build_invoice(order_info, items, lang="FR"):
 
     # ===== Modern Items Table =====
     headers = [tr["description"], tr["qty"], tr["unit_price_ht"], tr["vat_rate"], tr["unit_price_ttc"], tr["total_ttc"]]
-    # Convert headers to modern paragraph objects
-    headers = [Paragraph(header, modern_subheader) for header in headers]
+    
+    # Function to add line breaks for long headers
+    def format_header(header_text):
+        # Add line breaks for very long headers to prevent overflow
+        if len(header_text) > 15:
+            # Try to break at natural points
+            if "(" in header_text and ")" in header_text:
+                # For headers like "Price (excl. VAT)", break before the parenthesis
+                parts = header_text.split(" (")
+                if len(parts) == 2:
+                    return f"{parts[0]}<br/>({parts[1]}"
+            elif " " in header_text:
+                # Break at the last space before 15 characters
+                words = header_text.split()
+                if len(words) >= 2:
+                    first_part = words[0]
+                    rest_part = " ".join(words[1:])
+                    if len(first_part) <= 12 and len(rest_part) <= 12:
+                        return f"{first_part}<br/>{rest_part}"
+        return header_text
+    
+    # Convert headers to modern compact paragraph objects with line breaks
+    headers = [Paragraph(format_header(header), modern_table_header) for header in headers]
     rows = [headers]
     total_ht = 0
     total_vat = 0
@@ -366,16 +394,16 @@ def build_invoice(order_info, items, lang="FR"):
             ])
         total_ttc += final_delivery_charges
 
-    items_table = Table(rows, colWidths=[65*mm, 15*mm, 22*mm, 18*mm, 22*mm, 22*mm])
+    items_table = Table(rows, colWidths=[60*mm, 15*mm, 20*mm, 16*mm, 20*mm, 20*mm])
     items_table.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,0), ModernColors.PRIMARY_BLUE),
         ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
         ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
         ("VALIGN", (0,0), (-1,-1), "TOP"),
-        ("LEFTPADDING", (0,0), (-1,-1), 12),
-        ("RIGHTPADDING", (0,0), (-1,-1), 12),
-        ("TOPPADDING", (0,0), (-1,-1), 10),
-        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+        ("LEFTPADDING", (0,0), (-1,-1), 6),
+        ("RIGHTPADDING", (0,0), (-1,-1), 6),
+        ("TOPPADDING", (0,0), (-1,-1), 4),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
         ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
         ("LINEBELOW", (0,0), (-1,0), 2, ModernColors.PRIMARY_BLUE),
     ]))
