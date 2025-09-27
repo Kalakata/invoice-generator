@@ -8,8 +8,7 @@ env/
 venv/
 ENV/
 
-# Log files (optional - you might want to keep them)
-invoice_log.json
+# Log files (session-based logging, no files needed)
 
 # IDE
 .vscode/

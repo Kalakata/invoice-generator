@@ -13,10 +13,9 @@ import io, base64, datetime
 with open("translations.json", "r", encoding="utf-8") as f:
     translations = json.load(f)
 
-# ===== Data Logging System =====
-def log_invoice_data(order_info, products, pdf_bytes):
-    """Log comprehensive invoice data to JSON file"""
-    log_file = "invoice_log.json"
+# ===== Session-Based Data Logging System =====
+def add_to_session_log(order_info, products, pdf_bytes):
+    """Add invoice data to session state for current session"""
     
     # Create log entry
     log_entry = {
@@ -68,25 +67,12 @@ def log_invoice_data(order_info, products, pdf_bytes):
         }
     }
     
-    # Load existing log or create new
-    if os.path.exists(log_file):
-        try:
-            with open(log_file, "r", encoding="utf-8") as f:
-                log_data = json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            log_data = []
-    else:
-        log_data = []
+    # Initialize session log if it doesn't exist
+    if "invoice_log" not in st.session_state:
+        st.session_state["invoice_log"] = []
     
-    # Add new entry
-    log_data.append(log_entry)
-    
-    # Save updated log
-    try:
-        with open(log_file, "w", encoding="utf-8") as f:
-            json.dump(log_data, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        print(f"Error saving log: {e}")
+    # Add new entry to session
+    st.session_state["invoice_log"].append(log_entry)
 
 styles = getSampleStyleSheet()
 normal = styles["Normal"]
@@ -673,8 +659,8 @@ if st.button("Generate Invoice") and st.session_state["products"]:
     items = pd.DataFrame(st.session_state["products"])
     pdf_bytes = build_invoice(order_info, items, order_info["language"])
 
-    # Log invoice data
-    log_invoice_data(order_info, st.session_state["products"], pdf_bytes)
+    # Add to session log
+    add_to_session_log(order_info, st.session_state["products"], pdf_bytes)
 
     # Browser-friendly PDF display
     st.markdown("### 📄 Invoice Preview")
@@ -697,3 +683,48 @@ if st.button("Generate Invoice") and st.session_state["products"]:
     st.caption(f"📊 PDF size: {pdf_size_mb:.2f} MB | Generated at {datetime.datetime.now().strftime('%H:%M:%S')}")
     
     st.success(f"✅ Invoice {order_info.get('invoice_number', '')} generated and logged!")
+    
+    # Display session data and download option
+    st.markdown("---")
+    st.markdown("### 📊 Session Data Log")
+    
+    if "invoice_log" in st.session_state and st.session_state["invoice_log"]:
+        # Show number of invoices in current session
+        invoice_count = len(st.session_state["invoice_log"])
+        st.info(f"📈 **Current Session:** {invoice_count} invoice(s) generated")
+        
+        # Create downloadable JSON
+        log_json = json.dumps(st.session_state["invoice_log"], indent=2, ensure_ascii=False)
+        log_bytes = log_json.encode('utf-8')
+        
+        # Download button for session data
+        st.download_button(
+            label="📥 Download Session Data (JSON)",
+            data=log_bytes,
+            file_name=f"invoice_session_log_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+            mime="application/json",
+            help="Download all invoice data from current session as JSON file"
+        )
+        
+        # Show summary table of invoices in session
+        st.markdown("#### 📋 Invoice Summary")
+        summary_data = []
+        for i, log_entry in enumerate(st.session_state["invoice_log"], 1):
+            summary_data.append({
+                "Invoice #": log_entry["invoice_number"],
+                "Customer": log_entry["customer_info"]["customer_name"],
+                "Date": log_entry["timestamp"][:10],
+                "Products": log_entry["totals"]["total_products"],
+                "Currency": log_entry["payment_info"]["currency"]
+            })
+        
+        if summary_data:
+            summary_df = pd.DataFrame(summary_data)
+            st.dataframe(summary_df, use_container_width=True)
+            
+            # Clear session data button
+            if st.button("🗑️ Clear Session Data", help="Clear all invoice data from current session"):
+                st.session_state["invoice_log"] = []
+                st.rerun()
+    else:
+        st.info("No invoices generated in this session yet.")
