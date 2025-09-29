@@ -506,9 +506,6 @@ def build_invoice(order_info, items, lang="FR"):
     # Customer service information
     story.append(Paragraph(tr["customer_service"], modern_small))
     story.append(Spacer(1, 4))
-    
-    # Legal mentions
-    story.append(Paragraph(tr["legal"], modern_small))
 
     doc.build(story)
     pdf = buffer.getvalue()
