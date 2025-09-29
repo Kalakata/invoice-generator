@@ -168,12 +168,12 @@ def build_invoice(order_info, items, lang="FR"):
     
     # Modern header info table
     header_data = [
-        [Paragraph(f"{tr['sold_by']}", modern_subheader), 
-         Paragraph(f"{tr['invoice_date']}", modern_subheader),
-         Paragraph(f"{tr['invoice_number']}", modern_subheader)],
-        [Paragraph(order_info.get('seller_name', ''), modern_text),
-         Paragraph(str(order_info.get('invoice_date', '')), modern_text),
-         Paragraph(order_info.get('invoice_number', ''), modern_text)]
+        [Paragraph(f"{tr['invoice_date']}", modern_subheader), 
+         Paragraph(f"{tr['invoice_number']}", modern_subheader),
+         Paragraph(f"{tr['order_number']}", modern_subheader)],
+        [Paragraph(str(order_info.get('invoice_date', '')), modern_text),
+         Paragraph(order_info.get('invoice_number', ''), modern_text),
+         Paragraph(order_info.get('order_number', ''), modern_text)]
     ]
     
     header_table = Table(header_data, colWidths=[60*mm, 60*mm, 60*mm])
@@ -226,9 +226,9 @@ def build_invoice(order_info, items, lang="FR"):
     ]))
     story.append(customer_table)
         
-    # ===== Sold by Information =====
+    # ===== Seller Information =====
     story.append(Spacer(1, 8))
-    story.append(Paragraph(tr["sold_by"], modern_header))
+    story.append(Paragraph(tr["seller_info"], modern_header))
     story.append(Spacer(1, 6))
     
     # Create comprehensive seller information table
@@ -263,6 +263,13 @@ def build_invoice(order_info, items, lang="FR"):
     ]))
     story.append(seller_table)
     story.append(Spacer(1, 8))
+
+    # ===== Delivery Address =====
+    if order_info.get("shipping_address"):
+        story.append(Paragraph(tr["shipping_address"], modern_header))
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(order_info.get("shipping_address", ""), modern_text))
+        story.append(Spacer(1, 8))
 
     # ===== Modern Order Information =====
     story.append(Paragraph(tr["order_info_header"], modern_header))
