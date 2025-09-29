@@ -355,9 +355,8 @@ def build_invoice(order_info, items, lang="FR"):
     delivery_discount_amount = float(order_info.get("delivery_discount_amount", 0))
     
     if delivery_charges > 0:
-        # Calculate discount
-        discount_from_percent = delivery_charges * (delivery_discount_percent / 100)
-        total_discount = max(discount_from_percent, delivery_discount_amount)
+        # Calculate discount from percentage (amount is auto-calculated in UI)
+        total_discount = delivery_charges * (delivery_discount_percent / 100)
         final_delivery_charges_ht = max(0, delivery_charges - total_discount)
         
         # Calculate VAT on delivery charges
@@ -374,8 +373,6 @@ def build_invoice(order_info, items, lang="FR"):
             discount_desc = tr.get("shipping_discount", "Promotion")
             if delivery_discount_percent > 0:
                 discount_desc += f" (-{delivery_discount_percent:.1f}%)"
-            elif delivery_discount_amount > 0:
-                discount_desc += f" (-{delivery_discount_amount:.2f} {currency_symbol})"
             
             rows.append([
                 Paragraph(delivery_desc, modern_text),
@@ -681,8 +678,18 @@ with col3:
     default_discount_percent = get_default_value(0.0, 20.0)
     order_info["delivery_discount_percent"] = st.number_input("Delivery Discount (%)", min_value=0.0, max_value=100.0, value=default_discount_percent, step=0.001, format="%.3f")
 with col4:
-    default_discount_amount = get_default_value(0.0, 0.0)
-    order_info["delivery_discount_amount"] = st.number_input(f"Delivery Discount Amount ({currency_symbol})", min_value=0.0, value=default_discount_amount, step=0.001, format="%.3f")
+    # Calculate discount amount automatically from percentage and delivery charges
+    delivery_charges = order_info.get("delivery_charges", 0)
+    discount_percent = order_info.get("delivery_discount_percent", 0)
+    calculated_discount_amount = delivery_charges * (discount_percent / 100)
+    
+    # Display calculated discount amount as a metric
+    st.metric(f"Delivery Discount Amount ({currency_symbol})", 
+              f"{calculated_discount_amount:.2f}", 
+              help="Automatically calculated: Delivery charges × Discount %")
+    
+    # Store the calculated amount for use in PDF generation
+    order_info["delivery_discount_amount"] = calculated_discount_amount
 with col5:
     default_promotion = get_default_value("", "10% off delivery for orders over €100")
     order_info["promotion_description"] = st.text_input("Promotion Description", value=default_promotion, placeholder="e.g., Free shipping over €50")
