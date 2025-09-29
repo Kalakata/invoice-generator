@@ -679,17 +679,12 @@ st.subheader("Additional Information")
 default_payment = get_default_value("", "PAY-REF-789456123")
 order_info["payment_ref"] = st.text_input("Payment Reference", value=default_payment)
 
-# Addresses in horizontal layout
-col1, col2 = st.columns(2)
-with col1:
-    st.write("")  # Empty space for layout balance
-
-with col2:
-    default_shipping = get_default_value("", "TechCorp Solutions Ltd\n456 Tech Street\nLondon, SW1A 1AA\nUnited Kingdom")
-    order_info["shipping_address"] = st.text_area("Shipping Address (Customer Address)", 
-                                                 height=80, 
-                                                 placeholder="Customer Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry Code",
-                                                 value=default_shipping)
+# Shipping Address
+default_shipping = get_default_value("", "TechCorp Solutions Ltd\n456 Tech Street\nLondon, SW1A 1AA\nUnited Kingdom")
+order_info["shipping_address"] = st.text_area("Shipping Address (Customer Address)", 
+                                             height=80, 
+                                             placeholder="Customer Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry Code",
+                                             value=default_shipping)
 
 # Delivery/Shipping section with promotions
 st.subheader("Delivery/Shipping & Promotions")
