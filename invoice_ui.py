@@ -163,7 +163,7 @@ def build_invoice(order_info, items, lang="FR"):
                                       fontName="Helvetica-Bold", fontSize=12,
                                       textColor=ModernColors.SUCCESS_GREEN,
                                       spaceAfter=4)
-        story.append(Paragraph("✓ Payé", payment_style))
+        story.append(Paragraph(tr["paid_status"], payment_style))
         story.append(Paragraph(f"{tr['payment_ref']} {order_info['payment_ref']}", modern_text))
     
     # Modern header info table
