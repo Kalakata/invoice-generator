@@ -670,13 +670,13 @@ st.subheader("Delivery/Shipping & Promotions")
 col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 2])
 with col1:
     default_delivery = get_default_value(0.0, 15.00)
-    order_info["delivery_charges"] = st.number_input(f"Delivery/Shipping Charges ({currency_symbol})", min_value=0.0, value=default_delivery, step=0.001, format="%.3f", on_change=lambda: st.rerun())
+    order_info["delivery_charges"] = st.number_input(f"Delivery/Shipping Charges ({currency_symbol})", min_value=0.0, value=default_delivery, step=0.001, format="%.3f")
 with col2:
     default_delivery_vat = get_default_value(0.0, 20.0)
-    order_info["delivery_vat_rate"] = st.number_input("Delivery VAT (%)", min_value=0.0, max_value=100.0, value=default_delivery_vat, step=0.001, format="%.3f", on_change=lambda: st.rerun())
+    order_info["delivery_vat_rate"] = st.number_input("Delivery VAT (%)", min_value=0.0, max_value=100.0, value=default_delivery_vat, step=0.001, format="%.3f")
 with col3:
     default_discount_percent = get_default_value(0.0, 20.0)
-    order_info["delivery_discount_percent"] = st.number_input("Delivery Discount (%)", min_value=0.0, max_value=100.0, value=default_discount_percent, step=0.001, format="%.3f", on_change=lambda: st.rerun())
+    order_info["delivery_discount_percent"] = st.number_input("Delivery Discount (%)", min_value=0.0, max_value=100.0, value=default_discount_percent, step=0.001, format="%.3f")
 with col4:
     # Calculate discount amount automatically from percentage and delivery charges
     delivery_charges = order_info.get("delivery_charges", 0)
@@ -741,10 +741,10 @@ with st.form("add_product_form"):
     with col3:
         qty = st.number_input("Qty", min_value=1, value=1, key="qty")
     with col4:
-        unit_price = st.number_input(f"Unit Price HT ({currency_symbol})", min_value=0.0, value=10.0, step=0.001, format="%.3f", key="price", help="Price excluding VAT", on_change=lambda: st.rerun())
+        unit_price = st.number_input(f"Unit Price HT ({currency_symbol})", min_value=0.0, value=10.0, step=0.001, format="%.3f", key="price", help="Price excluding VAT")
     with col5:
         # Calculate TTC price automatically
-        vat_rate = st.number_input("VAT %", min_value=0.0, value=20.0, step=0.001, format="%.3f", key="vat", on_change=lambda: st.rerun())
+        vat_rate = st.number_input("VAT %", min_value=0.0, value=20.0, step=0.001, format="%.3f", key="vat")
         # Display calculated TTC price
         if unit_price > 0 and vat_rate >= 0:
             calculated_ttc = unit_price * (1 + vat_rate / 100)
