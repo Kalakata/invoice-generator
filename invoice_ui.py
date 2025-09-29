@@ -521,8 +521,9 @@ with st.sidebar:
     if st.button("🗑️ Clear All Data", type="secondary", use_container_width=True):
         # Clear all data including sample data flags
         st.session_state.clear()
-        # Set a flag to indicate data was cleared and initialize empty products list
+        # Set flags to indicate data was cleared and initialize empty products list
         st.session_state["data_cleared"] = True
+        st.session_state["sample_data_loaded"] = False
         st.session_state["products"] = []
         st.rerun()
     
@@ -559,9 +560,18 @@ with st.sidebar:
     # Helper function to get default values based on sample data and cleared state
     def get_default_value(empty_value, sample_value):
         data_cleared = st.session_state.get("data_cleared", False)
+        sample_loaded = st.session_state.get("sample_data_loaded", False)
+        
+        # If data was cleared, always return empty value
         if data_cleared:
             return empty_value
-        return sample_value if st.session_state.get("sample_data_loaded") else empty_value
+        
+        # If sample data is loaded, return sample value
+        if sample_loaded:
+            return sample_value
+        
+        # Otherwise return empty value
+        return empty_value
     
     # Reset cleared flag after using it
     data_cleared = st.session_state.get("data_cleared", False)
