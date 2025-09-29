@@ -190,29 +190,32 @@ def build_invoice(order_info, items, lang="FR"):
     story.append(header_table)
     story.append(Spacer(1, 8))
     
+    # ===== Customer Name Header =====
+    customer_name = order_info.get("customer_name", "")
+    if customer_name:
+        story.append(Paragraph(customer_name, modern_title))
+        story.append(Spacer(1, 8))
+    
     # ===== Modern Customer Information Table =====
     story.append(Paragraph(tr["customer_info"], modern_header))
     story.append(Spacer(1, 6))
     
     # Create comprehensive customer information table
     customer_info = [
-        [Paragraph(tr["customer_name"], modern_white_header), 
-         Paragraph(tr["vat"], modern_white_header),
+        [Paragraph(tr["vat"], modern_white_header),
          Paragraph(tr["business_address"], modern_white_header)]
     ]
     
     # Add customer information
-    customer_name = order_info.get("customer_name", "")
     customer_vat = order_info.get("customer_vat", "")
     business_address = order_info.get("commercial_address", "")
     
     customer_info.append([
-        Paragraph(customer_name, modern_text),
         Paragraph(customer_vat, modern_text),
         Paragraph(business_address, modern_text)
     ])
     
-    customer_table = Table(customer_info, colWidths=[60*mm, 40*mm, 80*mm])
+    customer_table = Table(customer_info, colWidths=[60*mm, 120*mm])
     customer_table.setStyle(TableStyle([
         ("BACKGROUND", (0,0), (-1,0), ModernColors.PRIMARY_BLUE),
         ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
