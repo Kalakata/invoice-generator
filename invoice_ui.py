@@ -190,69 +190,79 @@ def build_invoice(order_info, items, lang="FR"):
     story.append(header_table)
     story.append(Spacer(1, 8))
     
-    # Customer name with modern styling
-    story.append(Paragraph(order_info.get("customer_name", ""), modern_header))
+    # ===== Modern Customer Information Table =====
+    story.append(Paragraph(tr["customer_info"], modern_header))
     story.append(Spacer(1, 6))
-
-    # ===== Modern Customer Information =====
-    if order_info.get("commercial_address") or order_info.get("shipping_address"):
-        customer_info = [
-            [Paragraph(tr["commercial_address"], modern_white_header), 
-             Paragraph(tr["shipping_address"], modern_white_header)]
-        ]
+    
+    # Create comprehensive customer information table
+    customer_info = [
+        [Paragraph(tr["customer_name"], modern_white_header), 
+         Paragraph(tr["vat"], modern_white_header),
+         Paragraph(tr["business_address"], modern_white_header)]
+    ]
+    
+    # Add customer information
+    customer_name = order_info.get("customer_name", "")
+    customer_vat = order_info.get("customer_vat", "")
+    business_address = order_info.get("commercial_address", "")
+    
+    customer_info.append([
+        Paragraph(customer_name, modern_text),
+        Paragraph(customer_vat, modern_text),
+        Paragraph(business_address, modern_text)
+    ])
+    
+    customer_table = Table(customer_info, colWidths=[60*mm, 40*mm, 80*mm])
+    customer_table.setStyle(TableStyle([
+        ("BACKGROUND", (0,0), (-1,0), ModernColors.PRIMARY_BLUE),
+        ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
+        ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("RIGHTPADDING", (0,0), (-1,-1), 8),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
+    ]))
+    story.append(customer_table)
         
-        # Add customer/seller information with proper formatting
-        commercial_text = order_info.get("commercial_address", "")
-        shipping_text = order_info.get("shipping_address", "")
-        if order_info.get("customer_vat"):
-            shipping_text += f"\n{tr['vat']} {order_info['customer_vat']}"
-        seller_text = f"{order_info['seller_name']}\n{order_info['seller_vat']}"
-        
-        customer_info.append([
-            Paragraph(commercial_text, modern_text),
-            Paragraph(shipping_text, modern_text)
-        ])
-        
-        customer_table = Table(customer_info, colWidths=[90*mm, 90*mm])
-        customer_table.setStyle(TableStyle([
-            ("BACKGROUND", (0,0), (-1,0), ModernColors.PRIMARY_BLUE),
-            ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
-            ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
-            ("VALIGN", (0,0), (-1,-1), "TOP"),
-            ("LEFTPADDING", (0,0), (-1,-1), 8),
-            ("RIGHTPADDING", (0,0), (-1,-1), 8),
-            ("TOPPADDING", (0,0), (-1,-1), 6),
-            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
-            ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
-        ]))
-        story.append(customer_table)
-        
-        # Add seller information if seller address is provided - more compact layout
-        if order_info.get("seller_address"):
-            story.append(Spacer(1, 6))
-            
-            # Create a compact seller info table instead of paragraph
-            seller_info_data = [
-                [Paragraph(f"<b>{tr['sold_by']}</b>", modern_white_header), 
-                 Paragraph(f"<b>{tr['vat']}</b>", modern_white_header)],
-                [Paragraph(order_info.get('seller_name', ''), modern_text),
-                 Paragraph(order_info.get('seller_vat', ''), modern_text)],
-                [Paragraph(order_info.get('seller_address', ''), modern_text), ""]
-            ]
-            
-            seller_table = Table(seller_info_data, colWidths=[120*mm, 60*mm])
-            seller_table.setStyle(TableStyle([
-                ("BACKGROUND", (0,0), (-1,0), ModernColors.LIGHT_GREY),
-                ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
-                ("VALIGN", (0,0), (-1,-1), "TOP"),
-                ("LEFTPADDING", (0,0), (-1,-1), 6),
-                ("RIGHTPADDING", (0,0), (-1,-1), 6),
-                ("TOPPADDING", (0,0), (-1,-1), 4),
-                ("BOTTOMPADDING", (0,0), (-1,-1), 4),
-            ]))
-            story.append(seller_table)
-        
-        story.append(Spacer(1, 8))
+    # ===== Sold by Information =====
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(tr["sold_by"], modern_header))
+    story.append(Spacer(1, 6))
+    
+    # Create comprehensive seller information table
+    seller_info = [
+        [Paragraph(tr["company_name"], modern_white_header), 
+         Paragraph(tr["vat"], modern_white_header),
+         Paragraph(tr["address"], modern_white_header)]
+    ]
+    
+    # Add seller information
+    seller_name = order_info.get("seller_name", "")
+    seller_vat = order_info.get("seller_vat", "")
+    seller_address = order_info.get("seller_address", "")
+    
+    seller_info.append([
+        Paragraph(seller_name, modern_text),
+        Paragraph(seller_vat, modern_text),
+        Paragraph(seller_address, modern_text)
+    ])
+    
+    seller_table = Table(seller_info, colWidths=[60*mm, 40*mm, 80*mm])
+    seller_table.setStyle(TableStyle([
+        ("BACKGROUND", (0,0), (-1,0), ModernColors.PRIMARY_BLUE),
+        ("TEXTCOLOR", (0,0), (-1,0), ModernColors.WHITE),
+        ("GRID", (0,0), (-1,-1), 0.5, ModernColors.BORDER_GREY),
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("RIGHTPADDING", (0,0), (-1,-1), 8),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("ROWBACKGROUNDS", (0,1), (-1,-1), [ModernColors.WHITE, ModernColors.LIGHT_GREY]),
+    ]))
+    story.append(seller_table)
+    story.append(Spacer(1, 8))
 
     # ===== Modern Order Information =====
     story.append(Paragraph(tr["order_info_header"], modern_header))
@@ -534,7 +544,7 @@ with st.sidebar:
 if st.session_state.get("sample_data_loaded"):
     st.success("✅ Sample data loaded! You can now test the invoice generation or clear data to start fresh.")
 else:
-    st.write("Enter invoice details:")
+	st.write("Enter invoice details:")
 
 # Language and Currency selection - Moved to sidebar for more horizontal space
 with st.sidebar:
@@ -571,15 +581,18 @@ order_info["currency"] = currency
 order_info["language"] = language
 # Customer Information
 st.subheader("Customer Information")
-col1, col2, col3 = st.columns([2, 2, 1])
+col1, col2 = st.columns(2)
 with col1:
     default_customer = get_default_value("", "TechCorp Solutions Ltd")
-    order_info["customer_name"] = st.text_input("Customer Name", value=default_customer)
-with col2:
+    order_info["customer_name"] = st.text_input("Customer/Company Name", value=default_customer)
     default_vat = get_default_value("", "GB123456789")
     order_info["customer_vat"] = st.text_input("Customer VAT Number", value=default_vat)
-with col3:
-    st.markdown("<br>", unsafe_allow_html=True)  # Spacer for better alignment
+with col2:
+    default_commercial = get_default_value("", "TechCorp Solutions Ltd\n123 Business Street\nLondon, SW1A 1AA\nUnited Kingdom")
+    order_info["commercial_address"] = st.text_area("Business Address", 
+                                                   height=100,
+                                                   placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCity, Postal Code\nCountry",
+                                                   value=default_commercial)
 
 # Order Information
 st.subheader("Order Information")
@@ -593,8 +606,8 @@ with col2:
     order_info["invoice_number"] = st.text_input("Invoice Number", value=default_invoice)
 order_info["invoice_date"] = st.date_input("Invoice Date", datetime.date.today())
 
-# Seller Information
-st.subheader("Seller Information")
+# Seller Information (Sold by)
+st.subheader("Sold by")
 col1, col2 = st.columns(2)
 with col1:
     default_seller = get_default_value("Nikilko2017 LTD", "Digital Innovations Inc")
