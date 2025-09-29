@@ -682,11 +682,7 @@ order_info["payment_ref"] = st.text_input("Payment Reference", value=default_pay
 # Addresses in horizontal layout
 col1, col2 = st.columns(2)
 with col1:
-    default_commercial = get_default_value("", "Digital Innovations Inc\n123 Business Avenue\nSuite 456\nParis, 75001\nFrance")
-    order_info["commercial_address"] = st.text_area("Commercial Address (Company Name, Address, Country)", 
-                                                   height=80, 
-                                                   placeholder="Company Name\nAddress Line 1\nAddress Line 2\nCountry Code",
-                                                   value=default_commercial)
+    st.write("")  # Empty space for layout balance
 
 with col2:
     default_shipping = get_default_value("", "TechCorp Solutions Ltd\n456 Tech Street\nLondon, SW1A 1AA\nUnited Kingdom")
