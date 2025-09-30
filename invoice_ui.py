@@ -339,10 +339,10 @@ def build_invoice(order_info, items, lang="FR"):
         vat_rate = float(item["vat_rate"])
         
         # Calculate TTC price from HT price and VAT rate (like delivery charges)
-        unit_price_ttc = unit_price * (1 + vat_rate / 100)
         line_ht = qty * unit_price
         line_vat = line_ht * (vat_rate / 100)
         line_ttc = line_ht + line_vat
+        unit_price_ttc = line_ttc / qty  # Calculate unit price TTC from line total to ensure consistency
 
         # Build product description with ASIN if available
         product_desc = item["product_description"]
@@ -375,8 +375,8 @@ def build_invoice(order_info, items, lang="FR"):
     delivery_discount_amount = float(order_info.get("delivery_discount_amount", 0))
     
     if delivery_charges > 0:
-        # Calculate discount from percentage (amount is auto-calculated in UI)
-        total_discount = delivery_charges * (delivery_discount_percent / 100)
+        # Use the fixed discount amount directly
+        total_discount = delivery_discount_amount
         final_delivery_charges_ht = max(0, delivery_charges - total_discount)
         
         # Calculate VAT on delivery charges
@@ -394,13 +394,18 @@ def build_invoice(order_info, items, lang="FR"):
             if delivery_discount_percent > 0:
                 discount_desc += f" (-{delivery_discount_percent:.1f}%)"
             
+            # Calculate delivery charges with VAT for display (use discounted amount)
+            delivery_ht = final_delivery_charges_ht
+            delivery_vat = delivery_vat_amount
+            delivery_ttc = final_delivery_charges_ttc
+            
             rows.append([
                 Paragraph(delivery_desc, modern_text),
                 Paragraph("1", modern_text),
-                Paragraph(f"{delivery_charges:.2f} {currency_symbol}", modern_text),
-                Paragraph("0.0 %", modern_text),
-                Paragraph(f"{delivery_charges:.2f} {currency_symbol}", modern_text),
-                Paragraph(f"{delivery_charges:.2f} {currency_symbol}", modern_text)
+                Paragraph(f"{delivery_ht:.2f} {currency_symbol}", modern_text),
+                Paragraph(f"{delivery_vat_rate:.1f} %", modern_text),
+                Paragraph(f"{delivery_ttc:.2f} {currency_symbol}", modern_text),
+                Paragraph(f"{delivery_ttc:.2f} {currency_symbol}", modern_text)
             ])
             
             # Calculate discount VAT amount (promotions typically have 0% VAT)
@@ -432,13 +437,14 @@ def build_invoice(order_info, items, lang="FR"):
                 Paragraph(f"{final_delivery_charges_ttc:.2f} {currency_symbol}", modern_text),
                 Paragraph(f"{final_delivery_charges_ttc:.2f} {currency_symbol}", modern_text)
             ])
+        # Add delivery charges to total (use discounted amount)
         total_ttc += final_delivery_charges_ttc
         
-        # Add delivery charges to VAT breakdown
+        # Add delivery charges to VAT breakdown (use discounted amount)
         if delivery_vat_rate not in vat_breakdown:
             vat_breakdown[delivery_vat_rate] = {"ht": 0, "vat": 0}
-        vat_breakdown[delivery_vat_rate]["ht"] += final_delivery_charges_ht
-        vat_breakdown[delivery_vat_rate]["vat"] += delivery_vat_amount
+        vat_breakdown[delivery_vat_rate]["ht"] += final_delivery_charges_ht  # Use discounted delivery charges
+        vat_breakdown[delivery_vat_rate]["vat"] += delivery_vat_amount  # Use VAT on discounted amount
 
     items_table = Table(rows, colWidths=[60*mm, 15*mm, 20*mm, 16*mm, 20*mm, 20*mm])
     items_table.setStyle(TableStyle([
@@ -459,12 +465,15 @@ def build_invoice(order_info, items, lang="FR"):
     # ===== Modern Totals =====
     story.append(Spacer(1, 8))
     
+    # Calculate correct total from VAT breakdown
+    calculated_total = sum(amounts['ht'] + amounts['vat'] for amounts in vat_breakdown.values())
+    
     # Invoice Total with modern styling
     total_style = ParagraphStyle("InvoiceTotal", parent=modern_title,
                                 fontName="Helvetica-Bold", fontSize=16,
                                 textColor=ModernColors.PRIMARY_BLUE,
                                 spaceAfter=8)
-    story.append(Paragraph(f"{tr['totals_invoice_total']} {total_ttc:.2f} {currency_symbol}", total_style))
+    story.append(Paragraph(f"{tr['totals_invoice_total']} {calculated_total:.2f} {currency_symbol}", total_style))
     
     # VAT breakdown table with modern styling
     vat_breakdown_table = [
@@ -696,21 +705,21 @@ with col2:
     default_delivery_vat = get_default_value(0.0, 20.0)
     order_info["delivery_vat_rate"] = st.number_input("Delivery VAT (%)", min_value=0.0, max_value=100.0, value=default_delivery_vat, step=0.001, format="%.3f")
 with col3:
-    default_discount_percent = get_default_value(0.0, 20.0)
-    order_info["delivery_discount_percent"] = st.number_input("Delivery Discount (%)", min_value=0.0, max_value=100.0, value=default_discount_percent, step=0.001, format="%.3f")
+    default_discount_amount = get_default_value(0.0, 3.00)
+    order_info["delivery_discount_amount"] = st.number_input(f"Delivery Discount Amount ({currency_symbol})", min_value=0.0, value=default_discount_amount, step=0.001, format="%.3f")
 with col4:
-    # Calculate discount amount automatically from percentage and delivery charges
+    # Calculate discount percentage for display purposes
     delivery_charges = order_info.get("delivery_charges", 0)
-    discount_percent = order_info.get("delivery_discount_percent", 0)
-    calculated_discount_amount = delivery_charges * (discount_percent / 100)
+    discount_amount = order_info.get("delivery_discount_amount", 0)
+    calculated_discount_percent = (discount_amount / delivery_charges * 100) if delivery_charges > 0 else 0
     
-    # Display calculated discount amount as a metric
-    st.metric(f"Delivery Discount Amount ({currency_symbol})", 
-              f"{calculated_discount_amount:.2f}", 
-              help="Automatically calculated: Delivery charges × Discount %")
+    # Display calculated discount percentage as a metric
+    st.metric(f"Delivery Discount (%)", 
+              f"{calculated_discount_percent:.1f}%", 
+              help="Automatically calculated: Discount amount ÷ Delivery charges × 100")
     
-    # Store the calculated amount for use in PDF generation
-    order_info["delivery_discount_amount"] = calculated_discount_amount
+    # Store the calculated percentage for use in PDF generation
+    order_info["delivery_discount_percent"] = calculated_discount_percent
 with col5:
     default_promotion = get_default_value("", "10% off delivery for orders over €100")
     order_info["promotion_description"] = st.text_input("Promotion Description", value=default_promotion, placeholder="e.g., Free shipping over €50")
