@@ -394,10 +394,10 @@ def build_invoice(order_info, items, lang="FR"):
             if delivery_discount_percent > 0:
                 discount_desc += f" (-{delivery_discount_percent:.1f}%)"
             
-            # Calculate delivery charges with VAT for display (use discounted amount)
-            delivery_ht = final_delivery_charges_ht
-            delivery_vat = delivery_vat_amount
-            delivery_ttc = final_delivery_charges_ttc
+            # Show original delivery charges (not discounted)
+            delivery_ht = delivery_charges
+            delivery_vat = delivery_charges * (delivery_vat_rate / 100)
+            delivery_ttc = delivery_ht + delivery_vat
             
             rows.append([
                 Paragraph(delivery_desc, modern_text),
@@ -440,11 +440,11 @@ def build_invoice(order_info, items, lang="FR"):
         # Add delivery charges to total (use discounted amount)
         total_ttc += final_delivery_charges_ttc
         
-        # Add delivery charges to VAT breakdown (use discounted amount)
+        # Add delivery charges to VAT breakdown (use original amount)
         if delivery_vat_rate not in vat_breakdown:
             vat_breakdown[delivery_vat_rate] = {"ht": 0, "vat": 0}
-        vat_breakdown[delivery_vat_rate]["ht"] += final_delivery_charges_ht  # Use discounted delivery charges
-        vat_breakdown[delivery_vat_rate]["vat"] += delivery_vat_amount  # Use VAT on discounted amount
+        vat_breakdown[delivery_vat_rate]["ht"] += delivery_charges  # Use original delivery charges
+        vat_breakdown[delivery_vat_rate]["vat"] += delivery_charges * (delivery_vat_rate / 100)  # Use VAT on original amount
 
     items_table = Table(rows, colWidths=[60*mm, 15*mm, 20*mm, 16*mm, 20*mm, 20*mm])
     items_table.setStyle(TableStyle([
