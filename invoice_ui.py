@@ -408,8 +408,9 @@ def build_invoice(order_info, items, lang="FR"):
                 Paragraph(f"{delivery_ttc:.2f} {currency_symbol}", modern_text)
             ])
             
-            # Calculate discount VAT amount (promotions typically have 0% VAT)
-            discount_vat_amount = 0  # Promotions are typically not subject to VAT
+            # Calculate discount VAT amount (promotions use delivery VAT rate)
+            discount_vat_amount = total_discount * (delivery_vat_rate / 100)
+            discount_total_ttc = total_discount + discount_vat_amount
             
             discount_style = ParagraphStyle("Discount", parent=modern_text,
                                           textColor=ModernColors.PRIMARY_BLUE,
@@ -418,16 +419,16 @@ def build_invoice(order_info, items, lang="FR"):
                 Paragraph(discount_desc, discount_style),
                 Paragraph("1", modern_text),
                 Paragraph(f"-{total_discount:.2f} {currency_symbol}", discount_style),
-                Paragraph("0.0 %", modern_text),
-                Paragraph(f"-{total_discount:.2f} {currency_symbol}", discount_style),
-                Paragraph(f"-{total_discount:.2f} {currency_symbol}", discount_style)
+                Paragraph(f"{delivery_vat_rate:.1f} %", modern_text),
+                Paragraph(f"-{discount_total_ttc:.2f} {currency_symbol}", discount_style),
+                Paragraph(f"-{discount_total_ttc:.2f} {currency_symbol}", discount_style)
             ])
             
-            # Add discount to VAT breakdown (promotions use 0% VAT)
-            if 0.0 not in vat_breakdown:
-                vat_breakdown[0.0] = {"ht": 0, "vat": 0}
-            vat_breakdown[0.0]["ht"] -= total_discount  # Subtract discount
-            vat_breakdown[0.0]["vat"] -= discount_vat_amount  # Subtract discount VAT (0)
+            # Add discount to VAT breakdown (promotions use delivery VAT rate)
+            if delivery_vat_rate not in vat_breakdown:
+                vat_breakdown[delivery_vat_rate] = {"ht": 0, "vat": 0}
+            vat_breakdown[delivery_vat_rate]["ht"] -= total_discount  # Subtract discount
+            vat_breakdown[delivery_vat_rate]["vat"] -= discount_vat_amount  # Subtract discount VAT
         else:
             rows.append([
                 Paragraph(delivery_desc, modern_text),
